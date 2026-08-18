@@ -911,57 +911,7 @@ with TAB_COMPOSITION:
             yaxis=dict(title=None, tickfont=dict(size=11)))
         st.plotly_chart(fig, width='stretch', config=PLOT_CFG, theme=None)
 
-    with c2:
-        st.markdown("###### Does leakage track network condition?")
-        driver = st.selectbox(
-            "Compare loss against",
-            ["Burst frequency (per 100 km)", "Plant age (years)",
-             "Meter age (years)", "Average pressure (bar)",
-             "Capacity utilisation (%)"], label_visibility="collapsed")
-        dmap = {"Burst frequency (per 100 km)": ("bursts_per_100km", "Bursts per 100 km"),
-                "Plant age (years)": ("plant_age_yr", "Plant age (years)"),
-                "Meter age (years)": ("meter_age_yr", "Meter age (years)"),
-                "Average pressure (bar)": ("pressure_bar", "Average pressure (bar)"),
-                "Capacity utilisation (%)": ("capacity_utilisation_pct",
-                                             "Capacity utilisation (%)")}
-        dcol, dlabel = dmap[driver]
-        d = sel.dropna(subset=[dcol, "nrw_pct"])
-
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=d[dcol], y=d.nrw_pct, mode="markers",
-            marker=dict(size=np.sqrt(d.nrw_m3 / sel.nrw_m3.max()) * 34 + 7,
-                        color=T.BLUE, opacity=0.75,
-                        line=dict(color=T.SURFACE, width=2)),
-            name="Plant",
-            customdata=np.stack([d.plant, d.district, d.nrw_m3], -1),
-            hovertemplate=("<b>%{customdata[0]}</b> · %{customdata[1]}<br>"
-                           f"{dlabel}  %{{x:,.1f}}<br>"
-                           "Loss rate  %{y:.1f}%<br>"
-                           "NRW  %{customdata[2]:,.0f} m³<extra></extra>")))
-        if len(d) > 2:
-            r = spearmanr(d[dcol], d.nrw_pct).statistic
-            b, a = np.polyfit(d[dcol], d.nrw_pct, 1)
-            xs = np.linspace(d[dcol].min(), d[dcol].max(), 50)
-            fig.add_trace(go.Scatter(
-                x=xs, y=a + b * xs, mode="lines", name=f"Trend (ρ = {r:.2f})",
-                line=dict(color=T.MUTED, width=1.5, dash="dash"),
-                hoverinfo="skip"))
-        fig.update_layout(
-            title=f"Loss rate against {dlabel.lower()}", height=430,
-            xaxis=dict(title=dlabel),
-            yaxis=dict(title="Loss rate (%)", ticksuffix="%"))
-        st.plotly_chart(fig, width='stretch', config=PLOT_CFG, theme=None)
-        if len(d) > 2:
-            strength = ("a strong" if abs(r) > 0.6 else
-                        "a moderate" if abs(r) > 0.3 else "little to no")
-            st.markdown(
-                f'<div class="caption">Spearman ρ = <b>{r:.2f}</b> — {strength} '
-                f'monotonic relationship. Correlation across plants is not '
-                f'causal evidence: plants differ in network length, terrain and '
-                f'age simultaneously, and this dataset cannot isolate one '
-                f'factor.</div>', unsafe_allow_html=True)
-
+ 
     
 
 
